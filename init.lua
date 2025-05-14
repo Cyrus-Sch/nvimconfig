@@ -182,14 +182,25 @@ vim.keymap.set('n', '<leader>q', vim.diagnostic.setloclist, { desc = 'Open diagn
 --
 -- NOTE: This won't work in all terminal emulators/tmux/etc. Try your own mapping
 -- or just use <C-\><C-n> to exit terminal mode
+
+vim.keymap.set('n', 'T', ':sp | terminal <enter>', { desc = 'Enter terminal mode in splitscreen' })
 vim.keymap.set('t', '<Esc><Esc>', '<C-\\><C-n>', { desc = 'Exit terminal mode' })
+
+-- -- open selected file path
+-- vim.keymap.set('v', 'gtf', function()
+--   local selection = table.concat(vim.fn.getregion(vim.fn.getpos 'v', vim.fn.getpos '.'), '\n')
+--   if vim.fn.filereadable(selection) then
+--     vim.cmd('edit ' .. selection)
+--   else
+--     error('The File: ' .. selection .. ' does not exist!')
+--   end
+-- end, { desc = '[o]pen [f]ile', silent = true })
 
 -- TIP: Disable arrow keys in normal mode
 -- vim.keymap.set('n', '<left>', '<cmd>echo "Use h to move!!"<CR>')
 -- vim.keymap.set('n', '<right>', '<cmd>echo "Use l to move!!"<CR>')
 -- vim.keymap.set('n', '<up>', '<cmd>echo "Use k to move!!"<CR>')
 -- vim.keymap.set('n', '<down>', '<cmd>echo "Use j to move!!"<CR>')
-
 -- Keybinds to make split navigation easier.
 --  Use CTRL+<hjkl> to switch between windows
 --
@@ -238,6 +249,7 @@ require('lazy').setup({
   -- NOTE: Plugins can be added with a link (or for a github repo: 'owner/repo' link).
   'NMAC427/guess-indent.nvim', -- Detect tabstop and shiftwidth automatically
   'sainnhe/gruvbox-material',
+  'p00f/clangd_extensions.nvim',
 
   -- NOTE: Plugins can also be added by using a table,
   -- with the first argument being the link and the following
@@ -478,6 +490,16 @@ require('lazy').setup({
 
       -- Useful status updates for LSP.
       { 'j-hui/fidget.nvim', opts = {} },
+      {
+        'seblyng/roslyn.nvim',
+        ft = 'cs',
+        opts = {
+          -- your configuration comes here; leave empty for default settings
+        },
+        dependencies = {
+          'williamboman/mason.nvim',
+        },
+      },
 
       -- Allows extra capabilities provided by blink.cmp
       'saghen/blink.cmp',
@@ -660,8 +682,23 @@ require('lazy').setup({
       --  - capabilities (table): Override fields in capabilities. Can be used to disable certain LSP features.
       --  - settings (table): Override the default settings passed when initializing the server.
       --        For example, to see the options for `lua_ls`, you could go to: https://luals.github.io/wiki/settings/
+      -- Setzt das Neovim-Logging auf TRACE
+
       local servers = {
-        clangd = {},
+        clangd = {
+          cmd = { 'clangd', '--compile-commands-dir .', '--query-driver /Applications/ti/ccs1220/ccs/utils/bin/gmake' },
+          filetypes = { 'c', 'cpp', 'objc', 'objcpp', 'cuda', 'proto' },
+          root_markers = { '.clangd', '.clang-tidy', '.clang-format', 'compile_commands.json', 'compile_flags.txt', 'configure.ac', '.git' },
+          capabilities = {
+            offsetEncoding = { 'utf-8', 'utf-16' },
+            textDocument = {
+              completion = {
+                editsNearCursor = true,
+              },
+            },
+          },
+        },
+        roslyn = {},
         -- gopls = {},
         -- pyright = {},
         -- rust_analyzer = {},
@@ -708,6 +745,11 @@ require('lazy').setup({
         'stylua', -- Used to format Lua code
       })
       require('mason-tool-installer').setup { ensure_installed = ensure_installed }
+      require('mason').setup {
+        registries = {
+          'github:Crashdummyy/mason-registry',
+        },
+      }
 
       require('mason-lspconfig').setup {
         ensure_installed = {}, -- explicitly set to an empty table (Kickstart populates installs via mason-tool-installer)
